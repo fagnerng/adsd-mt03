@@ -2,88 +2,75 @@ package com.adsd.barber;
 
 import java.util.LinkedList;
 
-public class BarberShop implements Runnable {
-	LinkedList<Client> clientList;
-	private int officeHours;
-	private long startTime;
+import org.joda.time.Instant;
 
-	public BarberShop(int officeHours) {
-		clientList = new LinkedList<Client>();
-		this.officeHours = officeHours;
+import com.adsd.util.Logger;
+
+public class BarberShop implements Runnable {
+
+	private final LinkedList<Client> mClients;
+	private int mCurrentId;
+	private Instant timeToEnd;
+	public BarberShop(final int timeDuration) {
+		mClients = new LinkedList<Client>();
+		mCurrentId = 1;
+		timeToEnd = Instant.now().plus(timeDuration * 1000);
+	}
+
+	public void addNewClient(final Client client) {
+		if (!isDone()) {
+			client.setId(mCurrentId++);
+			mClients.add(client);
+			Logger.log("NEW CLIENT ARRIVE", client.getId()+"");
+		}
 	}
 
 	@Override
 	public void run() {
-		System.out.println("Open for business:");
-		startTime = System.currentTimeMillis();
-		while (!isDone()) {
-			while (isEmpty())
-				waitForNewClient();
-			Client currentClient = getNextClient();
-			cutHairOfClient(currentClient);
+		Logger.log("OPEN FOR BUSINESS");
+
+		while (!isDone() || mClients.size()>0 ) {
+
+			while (mClients.size() <= 0) {
+				try {
+					Thread.sleep(5);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+			cutHairOfClient();
+			Logger.log("CURRENT QUEUE", getListOfClients());
 		}
-		System.out.println("Close for business:");
+		Logger.log("END");
 	}
 
-	private void cutHairOfClient(Client currentClient) {
-		System.out.println("Client(s) on waiting: " + getClientsOnQueue());
-		System.out.println("Current Client : " + currentClient.getId());
-		long currentTime = System.currentTimeMillis();
-		while (System.currentTimeMillis() < currentTime
-				+ currentClient.getDurationToComplete()) {
+	public void cutHairOfClient() {
+		final Client c = mClients.pop();
+		c.setTimeToFinish(Instant.now().plus(c.getDuration()));
+
+		Logger.log("CLIENT ON CUT ", "" + c.getId());
+		while (Instant.now().getMillis() < c.getTimeToFinish().getMillis());
+		Logger.log("CLIENT DONE", ""+c.getId());
+		
+
+	}
+
+	public boolean isDone() {
+
+		return Instant.now().getMillis() > timeToEnd.getMillis();
+	}
+
+	public String getListOfClients() {
+
+		String clientList = "[";
+
+		for (int i = 0; i < mClients.size(); i++) {
+			clientList += mClients.get(i).getId();
+			if (i != mClients.size() - 1)
+				clientList += ",";
 
 		}
-
-	}
-
-	public Client getNextClient() {
-		return clientList.pop();
-
-	}
-
-	public void addNewClient(Client newClienet) {
-		System.out.println("New client arrived, queue: " + newClienet.getId());
-
-		if (newClienet != null)
-			clientList.add(newClienet);
-
-		System.out.println("Client(s) on waiting: " + getClientsOnQueue());
-	}
-
-	public Boolean isEmpty() {
-		if (clientList == null)
-			clientList = new LinkedList<Client>();
-		return clientList.isEmpty();
-
-	}
-
-	public void waitForNewClient() {
-		try {
-			Thread.sleep(100);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	public String getClientsOnQueue() {
-		String allClients = "[";
-		for (int i = 0; i < clientList.size(); i++) {
-			allClients += clientList.get(i).getId();
-			if (i != clientList.size() - 1)
-				allClients += ",";
-		}
-		allClients += "]";
-		return allClients;
-
-	}
-
-	Boolean isDone() {
-		return System.currentTimeMillis() > hourToClose();
-
-	}
-
-	long hourToClose() {
-		return startTime + officeHours * 1000 * 60;
+		clientList += "]";
+		return clientList;
 	}
 }

@@ -1,7 +1,8 @@
 
 package com.adsd.main;
 
-import com.adsd.barber.BarberShop;
+import java.util.Random;
+
 import com.adsd.barber.Escalonator;
 import com.adsd.generator.GeneratorMixed;
 
@@ -10,15 +11,14 @@ import com.adsd.generator.GeneratorMixed;
  */
 public class Main {
 
-	static BarberShop mBarbearia;
-	static Escalonator  mEscalonador;
+	static Escalonator  mProgram;
      public static void main(final String[] args) {
     	 
-    	 final int timeDuration = 1;
-    	 
-    	 mBarbearia = new BarberShop(timeDuration);
-         mEscalonador = new Escalonator(mBarbearia, new GeneratorMixed(23, 43), timeDuration);
-         new Thread(mEscalonador).start();
-         new Thread(mBarbearia).start();
+    	
+    	 Random mRandom = new Random();
+    	 final int timeDuration = 1000;
+    	 mProgram = new Escalonator(new GeneratorMixed(mRandom.nextInt(100), mRandom.nextInt(100)), timeDuration);
+         new Thread(mProgram).start();
+         
      }
 }
